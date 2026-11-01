@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JMCU – DashTron Flash Tool</title>
+<style>
+  :root{--bg:#000;--card:#0c121a;--line:#26323f;--text:#e8eef5;--muted:#93a1b1;--accent:#18c6ff;--ok:#3ddc84;--err:#ff5d5d}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:"Sarabun","Noto Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;flex-direction:column;align-items:center}
+  .wrap{width:min(920px,calc(100% - 24px));margin:12px 0 28px;display:grid;gap:16px}
+  .hero{width:100%;display:block;border-radius:18px;border:1px solid var(--line)}
+  h1{margin:0;text-align:center;font-size:1.5rem}
+  .sub{color:var(--muted);margin:4px 0 0;text-align:center;font-size:.95rem}
+  .box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+  .box h2{margin:0 0 10px;font-size:1rem;color:var(--accent);font-weight:600}
+  .box ul{margin:0;padding-left:1.2em;line-height:1.75;font-size:.93rem}
+  details.dt{border:1px solid var(--line);border-radius:10px;background:#0a1118;margin-bottom:8px;padding:0 12px}
+  details.dt summary{cursor:pointer;padding:10px 0;font-weight:600}
+  details.dt[open] summary{color:var(--accent)}
+  details.dt ul{padding-bottom:10px}
+  ul.lim li{margin-bottom:4px}
+  select{background:#0e151d;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:inherit}
+  button{background:var(--accent);color:#04202b;border:0;border-radius:10px;padding:11px 18px;font:inherit;font-weight:700;cursor:pointer}
+  button:disabled{opacity:.4;cursor:not-allowed}
+  .status{font-size:.92rem;color:var(--muted);margin-top:8px}
+  .status.ok{color:var(--ok)} .status.err{color:var(--err)}
+  .bar{height:12px;border-radius:99px;background:#0e151d;border:1px solid var(--line);overflow:hidden;margin:12px 0 6px}
+  .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,#18c6ff,#3ddc84);transition:width .15s}
+  pre#log{margin:0;max-height:220px;overflow:auto;background:#05080c;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:.8rem;color:#b8c7d6;white-space:pre-wrap}
+  .warn{background:#3a2a0b;border:1px solid #7a5a10;color:#ffd98a;border-radius:10px;padding:10px 12px;display:none}
+  .hint{font-size:.82rem;color:var(--muted);margin:6px 0 0;line-height:1.6}
+  footer{color:var(--muted);font-size:.8rem;padding:0 12px 24px;text-align:center}
+</style>
+</head>
+<body>
+<main class="wrap">
+
+  <!-- ===== ภาพบนสุด ===== -->
+  <img class="hero" src="assets/dashtron.jpg" alt="DashTron บนบอร์ด CYD">
+  <div>
+    <h1>DashTron</h1>
+    <p class="sub">ติดตั้งเวอร์ชันใช้งานจริงลงบอร์ด CYD ได้จากเบราว์เซอร์</p>
+  </div>
+
+  <div class="warn" id="noSerial">เบราว์เซอร์นี้ไม่รองรับ Web Serial — กรุณาใช้ Chrome / Edge บนคอมพิวเตอร์</div>
+
+  <!-- ===== รายละเอียด ===== -->
+  <!-- ===== รายละเอียด DashTron ===== -->
+    <section class="box">
+      <h2>DashTron คืออะไร</h2>
+      <p style="margin:0;line-height:1.7">เกจวัดดิจิทัลสำหรับรถยนต์และมอเตอร์ไซค์ ใช้เสียบกับ OBD2 ผ่านอะแดปเตอร์ ELM327 แบบ Bluetooth (ชื่อ “OBDII”, PIN 1234) แล้วแสดงค่าจาก ECU แบบเรียลไทม์บนจอสัมผัส</p>
+    </section>
+
+    <section class="box">
+      <h2>ทำอะไรได้บ้าง</h2>
+      <details class="dt" open><summary>1. เชื่อมต่อและจับรถอัตโนมัติ</summary><ul><li>รองรับทั้งรถยนต์และมอเตอร์ไซค์ ผ่าน OBD2 เหมือนเดิม</li><li>อ่านและตั้งค่า PID อัตโนมัติ ตรวจว่ารถหรือมอเตอร์ไซค์คันนั้นรองรับค่าใดบ้าง แล้วตั้งค่าที่จะอ่านให้เอง ไม่ต้องตั้งเอง</li><li>ค้นหาและต่อ ELM327 เอง และจำ MAC ไว้ ครั้งต่อไปต่อเร็วขึ้น</li><li>ต่อหลุดแล้วลองต่อใหม่เอง</li><li>อ่านเลข VIN แล้วระบุยี่ห้อให้อัตโนมัติ ไม่ต้องเลือกรถเอง</li><li>มีโปรไฟล์เฉพาะ Toyota, Isuzu, Ford, Honda</li><li>รู้จักชื่อยี่ห้ออื่นอีกกว่า 20 ยี่ห้อ เช่น Mitsubishi, Nissan, Mazda, BMW, Mercedes, MG, Hyundai แต่ใช้โปรไฟล์ทั่วไป</li><li>รองรับโปรโตคอล OBD2 มาตรฐานทั้ง CAN, ISO และ J1850</li><li>ซ่อนค่าที่รถคันนั้นไม่รองรับให้เอง</li></ul></details>
+      <details class="dt"><summary>2. แสดงค่าเรียลไทม์ 18 ค่า</summary><ul><li>ความเร็ว, รอบเครื่อง, อุณหภูมิน้ำหล่อเย็น, อุณหภูมิไอดี (IAT)</li><li>MAP, MAF, ตำแหน่งปีกผีเสื้อ (TPS), โหลดเครื่อง</li><li>แรงดันแบตเตอรี่, องศาจุดระเบิด</li><li>A/F ratio, O2 sensor, แรงดันรางหัวฉีด</li><li>บูสต์เทอร์โบ (คำนวณจาก MAP หักด้วยความดันบรรยากาศ), อุณหภูมิไอเสีย (EGT)</li><li>อัตราสิ้นเปลืองน้ำมัน (L/h)</li><li>Fuel Trim ระยะสั้นและระยะยาว</li><li>ตัวเลขเปลี่ยนสีเหลืองหรือแดงเมื่อเกินเกณฑ์เตือน</li></ul></details>
+      <details class="dt"><summary>3. หน้าจอและการใช้งาน</summary><ul><li>หน้าหลัก 2 สไตล์ คือ DashTron และ SmartGauge สลับได้ด้วยปุ่ม UI</li><li>ธีมสี 6 แบบ: Lime, Cyan, Orange, Red, Magenta, White</li><li>หน้ารายละเอียดทุกค่า</li><li>หน้ากราฟ 4 หน้า ปัดซ้ายขวาสลับได้: Engine Performance, Thermal, Airflow, Fuel Rail Pressure</li><li>ภาษาไทยและอังกฤษ ใช้ฟอนต์ Sarabun ตั้งค่าได้ที่หน้า Settings (ค่าเริ่มต้นเป็นไทย)</li><li>ปรับความสว่างได้ทั้งแบบ Manual และ Auto (ใช้เซนเซอร์แสง LDR บนบอร์ด)</li><li>สลับทิศทางจอได้ (ปกติ / กลับหัว 180°)</li><li>จำค่าที่ตั้งไว้ทั้งหมด ได้แก่ ธีม, UI, ภาษา, ความสว่าง, ทิศจอ</li></ul></details>
+      <details class="dt"><summary>4. วิเคราะห์รถ (Settings → Fault Codes)</summary><ul><li>อ่านรหัสข้อผิดพลาด (DTC) ทั้ง stored และ pending พร้อมสถานะไฟ MIL (ไฟเช็กเครื่อง)</li><li>มีคำอธิบายรหัสมาตรฐาน P0xxx/P2xxx ประมาณ 100 รหัส เป็นภาษาไทยและอังกฤษ</li><li>ล้างรหัสได้ (ต้องกดยืนยัน 2 ครั้ง)</li><li>ดูสถานะความพร้อมของระบบ (Readiness Monitors)</li><li>ดูเซนเซอร์ที่รถรองรับ, Calibration ID, ชื่อ ECU, โปรโตคอลที่ใช้</li></ul></details>
+      <details class="dt"><summary>5. อัปเดตเฟิร์มแวร์</summary><ul><li>กด Update Software บนจอ แล้วตัวอัปเดตแยก (Updater) จะต่อ WiFi ดาวน์โหลดเวอร์ชันใหม่จาก GitHub พร้อมตรวจ SHA-256 ก่อนติดตั้ง</li><li>แอพหลักไม่ใช้ WiFi เลย</li></ul></details>
+    </section>
+
+    <section class="box">
+      <h2>ทำไม่ได้ / ข้อจำกัด</h2>
+      <ul class="lim"><li>ไม่ใช่ตัวจูนหรือแก้ ECU อ่านค่าอย่างเดียว เขียนหรือแก้ค่าใน ECU ไม่ได้ ที่เขียนได้มีแค่คำสั่งล้างรหัส DTC</li><li>ต้องมี ELM327 แบบ Bluetooth Classic รุ่น WiFi และ BLE ไม่รองรับ</li><li>ได้เฉพาะข้อมูล OBD2 มาตรฐาน ไม่อ่านข้อมูลเฉพาะยี่ห้อ เช่น ABS, SRS/Airbag, เกียร์, DPF ลึก ๆ หรือรหัสที่ขึ้นต้น B/C/U และไม่ทำ Bi-directional control</li><li>คำอธิบายรหัส DTC มีเฉพาะ P0xxx/P2xxx รหัสอื่นจะเห็นเป็นเลขรหัสอย่างเดียว</li><li>ล้างรหัสได้เฉพาะตอนเครื่องดับ (Key ON) ถ้าเครื่องหมุนอยู่ ECU จะปฏิเสธ</li><li>บางค่าอาจว่างในบางคัน เพราะขึ้นกับว่า ECU รองรับหรือไม่ เช่น EGT, FRP, Fuel Trim, O2S, AFR, อัตราสิ้นเปลือง Isuzu ดีเซลไม่มี Fuel Trim/AFR/O2S/IGN และ Honda ไม่มี EGT/FRP ส่วน Boost ใช้ได้เมื่อรถอ่าน MAP ได้ (รถไม่เทอร์โบจะได้ค่าติดลบหรือใกล้ 0)</li><li>ไม่มีการบันทึกข้อมูล (data logging) ไม่มี SD card, export หรือส่งข้อมูลขึ้นคลาวด์ กราฟเก็บแค่ในหน่วยความจำและหายเมื่อปิดเครื่อง</li><li>ไม่มีหน่วยอิมพีเรียล (km/h, °C, kPa, bar) ส่วน Boost แสดงเป็น psi</li><li>ไม่มีเตือนด้วยเสียง มีแค่เปลี่ยนสีตัวเลข และเกณฑ์เตือนเป็นค่าคงที่ในเฟิร์มแวร์ ผู้ใช้ปรับเองบนจอไม่ได้</li><li>ไม่มีหน้า GPS/นำทาง/เล่นเพลง เป็นเกจอย่างเดียว</li><li>อ่านได้ครั้งละรถ 1 คัน (รถยนต์หรือมอเตอร์ไซค์) / 1 ECU และต้องเสียบ OBD2 ค้างไว้ตลอด</li><li>ความถี่การอ่านขึ้นกับอะแดปเตอร์ ELM327 คุณภาพต่ำหรือรุ่นปลอมอาจช้า ต่อไม่ติด หรือหลุดบ่อย</li><li>ภาษา: หน่วยวัด, ชื่อยี่ห้อ, ตัวย่อเช่น VIN/ECU และหน้าจอ “Starting...” ตอนบูตเป็นอังกฤษเสมอ</li><li>นาฬิกา เป็นตัวจับเวลาตั้งแต่เชื่อมต่อ OBD2 ติด ไม่ใช่เวลาจริง</li></ul>
+    </section>
+
+  <!-- ===== ขั้นตอนติดตั้ง ===== -->
+  <section class="box">
+    <h2>1) เลือกจอของบอร์ด</h2>
+    <select id="board">
+      <option value="ILI9341">ILI9341</option>
+      <option value="ST7789">ST7789</option>
+    </select>
+  </section>
+
+  <section class="box">
+    <h2>2) สนับสนุนค่าน้ำชา 39 บาท</h2>
+    <button id="payBtn">☕ จ่าย 39 บาท (บัตร / PromptPay)</button>
+    <div class="status" id="payStatus"></div>
+  </section>
+
+  <section class="box">
+    <h2>3) ติดตั้งลงบอร์ด</h2>
+    <p class="hint" style="margin:0 0 10px">ใช้ Chrome / Edge บนคอมพิวเตอร์ เสียบสาย USB แล้วกดปุ่ม (บางบอร์ดต้องกดปุ่ม BOOT ค้างตอนเชื่อมต่อ)</p>
+    <button id="flashBtn" disabled>⚡ เชื่อมต่อและติดตั้ง</button>
+    <div class="bar"><i id="prog"></i></div>
+    <div class="status" id="status">พร้อม</div>
+    <pre id="log" style="margin-top:10px"></pre>
+  </section>
+</main>
+<footer>JMCU Microcontroller Unit</footer>
+
+<script type="module">
+import { ESPLoader, Transport } from "https://cdn.jsdelivr.net/npm/esptool-js@0.5.4/bundle.js";
+
+const API = "https://cyd-flash-api.YOUR_SUBDOMAIN.workers.dev"; // <- เปลี่ยนเป็น URL ของ Worker
+
+const $ = (id) => document.getElementById(id);
+const logEl = $("log");
+const log = (t) => { logEl.textContent += t + "\n"; logEl.scrollTop = logEl.scrollHeight; };
+const setStatus = (m, cls = "") => { $("status").textContent = m; $("status").className = "status " + cls; };
+if (!("serial" in navigator)) $("noSerial").style.display = "block";
+
+// session_id จาก Stripe เก็บไว้ในเบราว์เซอร์ เผื่อรีเฟรชหน้า
+const params = new URLSearchParams(location.search);
+let sessionId = params.get("session_id") || sessionStorage.getItem("sid") || "";
+if (params.get("session_id")) {
+  sessionStorage.setItem("sid", sessionId);
+  history.replaceState({}, "", location.pathname);
+}
+
+async function checkPaid() {
+  if (!sessionId) { $("payStatus").textContent = ""; return; }
+  try {
+    const r = await fetch(`${API}/parts?session_id=${sessionId}&board=${$("board").value}`);
+    if (r.ok) {
+      $("payStatus").textContent = "✅ ชำระเงินแล้ว ขอบคุณครับ";
+      $("payStatus").className = "status ok";
+      $("flashBtn").disabled = false;
+    } else {
+      $("payStatus").textContent = "ยังไม่พบการชำระเงิน";
+      $("payStatus").className = "status err";
+      $("flashBtn").disabled = true;
+    }
+  } catch (e) { $("payStatus").textContent = "ตรวจสอบไม่ได้: " + e; }
+}
+$("board").addEventListener("change", checkPaid);
+checkPaid();
+
+$("payBtn").onclick = async () => {
+  $("payBtn").disabled = true;
+  try {
+    const r = await fetch(`${API}/checkout`, { method: "POST" });
+    const d = await r.json();
+    if (d.url) { location.href = d.url; return; }
+    alert(d.error || "สร้างรายการชำระเงินไม่ได้");
+  } catch (e) { alert("เชื่อมต่อระบบชำระเงินไม่ได้: " + e); }
+  $("payBtn").disabled = false;
+};
+
+const toBinStr = (u8) => {
+  let s = ""; const CH = 0x8000;
+  for (let i = 0; i < u8.length; i += CH) s += String.fromCharCode.apply(null, u8.subarray(i, i + CH));
+  return s;
+};
+const sha256hex = async (buf) =>
+  [...new Uint8Array(await crypto.subtle.digest("SHA-256", buf))].map((b) => b.toString(16).padStart(2, "0")).join("");
+
+const terminal = { clean() { logEl.textContent = ""; }, writeLine: log, write: (t) => { logEl.textContent += t; } };
+
+$("flashBtn").onclick = async () => {
+  if (!("serial" in navigator)) return alert("เบราว์เซอร์นี้ไม่รองรับ Web Serial ใช้ Chrome/Edge บนคอมพิวเตอร์");
+  $("flashBtn").disabled = true; $("board").disabled = true;
+  $("prog").style.width = "0%";
+  let transport;
+  try {
+    const board = $("board").value;
+    setStatus("ตรวจสอบการชำระเงิน…");
+    const pr = await fetch(`${API}/parts?session_id=${sessionId}&board=${board}`);
+    if (!pr.ok) throw new Error("ยังไม่ได้ชำระเงิน");
+    const { parts } = await pr.json();
+
+    const fileArray = [];
+    for (const p of parts) {
+      setStatus("กำลังดาวน์โหลด " + p.name + " …");
+      const fr = await fetch(`${API}/firmware?session_id=${sessionId}&path=${encodeURIComponent(p.path)}`);
+      if (!fr.ok) throw new Error("ดาวน์โหลดไม่สำเร็จ: " + p.name);
+      const buf = await fr.arrayBuffer();
+      if (p.sha256 && (await sha256hex(buf)) !== p.sha256.toLowerCase()) throw new Error("SHA-256 ไม่ตรง: " + p.name);
+      log(`${p.name} ${buf.byteLength} bytes → ${p.address}`);
+      fileArray.push({ data: toBinStr(new Uint8Array(buf)), address: parseInt(p.address, 16) });
+    }
+
+    const port = await navigator.serial.requestPort();
+    transport = new Transport(port, false);
+    const loader = new ESPLoader({ transport, baudrate: 460800, romBaudrate: 115200, terminal });
+    setStatus("กำลังเชื่อมต่อชิป…");
+    await loader.main();
+
+    setStatus("กำลังเขียน flash…");
+    const n = fileArray.length;
+    await loader.writeFlash({
+      fileArray,
+      flashSize: "keep", flashMode: "keep", flashFreq: "keep",
+      eraseAll: false,
+      compress: true,
+      reportProgress: (idx, written, total) => {
+        const p = Math.round(((idx + written / total) / n) * 100);
+        $("prog").style.width = p + "%";
+        setStatus(`กำลังเขียน flash… ${p}%`);
+      },
+    });
+    await loader.after();
+    $("prog").style.width = "100%";
+    setStatus("✅ เสร็จแล้ว — ถ้าบอร์ดไม่รีสตาร์ท ให้กด RESET หรือถอด/เสียบสาย USB ใหม่", "ok");
+  } catch (e) {
+    setStatus("❌ " + (e.message || e), "err");
+    log("ผิดพลาด: " + (e.message || e));
+  } finally {
+    try { await transport?.disconnect(); } catch {}
+    $("flashBtn").disabled = false; $("board").disabled = false;
+  }
+};
+</script>
+</body>
+</html>

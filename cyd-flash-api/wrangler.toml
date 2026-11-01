@@ -1,0 +1,15 @@
+name = "cyd-flash-api"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+# Origin only, no path. For https://USER.github.io/REPO/ use origin below and SITE_PATH = "/REPO/"
+SITE_URL = "https://YOUR_USER.github.io"
+SITE_PATH = "/YOUR_REPO/"
+FIRMWARE_OWNER = "jmcumicrocontrollerunit-eng"
+FIRMWARE_REPO = "JmcuMicrocontroller"
+FIRMWARE_BRANCH = "main"
+
+# Secrets (run these, do NOT put them in this file):
+#   npx wrangler secret put STRIPE_SECRET_KEY
+#   npx wrangler secret put GITHUB_TOKEN     # only if the firmware repo is private
